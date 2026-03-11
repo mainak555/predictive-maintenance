@@ -215,9 +215,9 @@ def evaluate(
             mlflow.log_metric("inference_latency_ms", inference_latency_ms)
 
             # model complexity
-            structure = extract_model_structure(best_model)
-            model_complexity = classify_model_complexity(structure)
-            mlflow.log_param("model_complexity", model_complexity)            
+            # structure = extract_model_structure(best_model)
+            # model_complexity = classify_model_complexity(structure)
+            # mlflow.log_param("model_complexity", model_complexity)            
         #eo: with
     #eo: for
     return output
