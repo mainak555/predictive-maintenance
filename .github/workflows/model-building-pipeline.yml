@@ -163,8 +163,8 @@ jobs:
       - name: Install Agent dependencies
         run: pip install --no-cache-dir --upgrade semantic-kernel==1.39.2
 
-    #   - name: Model Selection
-    #     run: python -m model_building.model_select # import agents**
+      - name: Model Selection
+        run: python -m model_building.model_select # import agents**
 
     #   - name: HF Model Repository
     #     run: python ./model-reg.py 
