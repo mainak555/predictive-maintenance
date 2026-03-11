@@ -2,6 +2,7 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 from huggingface_hub import HfApi
 import pandas as pd
+import numpy as np
 import os
 
 class IQRCapper(BaseEstimator, TransformerMixin):
