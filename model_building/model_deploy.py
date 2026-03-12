@@ -1,0 +1,146 @@
+
+from util2 import get_train_test_split
+from model_config import MODEL_CONFIG
+from model_train import evaluate
+
+from mlflow.tracking import MlflowClient
+from huggingface_hub import HfApi
+import joblib
+import mlflow
+import json
+import os
+
+
+HF_REPO = os.getenv("HF_REPO")
+hfApi = HfApi(token=os.getenv("HF_TOKEN"))
+PIPELINE_RUN_ID = os.getenv("GITHUB_RUN_ID")
+
+MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME")
+if not MLFLOW_EXPERIMENT_NAME:
+    raise RuntimeError("MLFLOW_EXPERIMENT_NAME not found")
+
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
+if not MLFLOW_TRACKING_URI:
+    raise RuntimeError("MLFLOW_TRACKING_URI not found")
+
+## get selected model of experiment ##
+client = MlflowClient()
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+experiment = client.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
+
+filter_string = (
+    "tags.selected_for_deployment = 'true' AND "
+    f"tags.pipeline_run_id = '{PIPELINE_RUN_ID}'"
+)
+
+runs = client.search_runs(
+    experiment_ids=[experiment.experiment_id],
+    filter_string=filter_string
+)
+if len(runs) != 1:
+    raise RuntimeError(f"Expected exactly one selected run, found {len(runs)}")
+
+# selected model details
+tags = runs[0].data.tags
+run_id = runs[0].info.run_id
+model_name = tags.get("model_name")
+print(f"selected mlflow run: {runs[0].info.run_name}")
+
+TOP_k_FEATURE_PATH = "feature_analysis/top_k_features.json"
+LOCAL_ARTIFACT_DIR = f"./artifacts_{run_id}"
+
+os.makedirs(LOCAL_ARTIFACT_DIR, exist_ok=True)
+local_path = client.download_artifacts(
+    dst_path=LOCAL_ARTIFACT_DIR,
+    path=TOP_k_FEATURE_PATH,
+    run_id=run_id,
+)
+
+with open(local_path, "r") as f:
+    top_k_artifact = json.load(f)
+
+top_k_features = [
+    f["name"] for f in top_k_artifact["features"]
+]
+
+if tags.get("sampling", "na") == "over":
+    result_dict = evaluate(PIPELINE_RUN_ID, {
+        model_name: MODEL_CONFIG[model_name] #only selected model
+    }, X_overSampled[top_k_features], y_overSampled, X_test[top_k_features], y_test)
+else:
+    result_dict = evaluate(PIPELINE_RUN_ID, {
+        model_name: MODEL_CONFIG[model_name] #only selected model
+    }, X_train[top_k_features], y_train, X_test[top_k_features], y_test)
+
+"""result_dict =>
+    model_name: {
+        estimator: estimator
+        mlflow_run_id: str
+    }
+"""
+
+## model serialization ##
+bin_path = f"{LOCAL_ARTIFACT_DIR}/{MLFLOW_EXPERIMENT_NAME}.joblib"
+bin_name =f"{MLFLOW_EXPERIMENT_NAME}.joblib"
+version = f"v1.0-build.{PIPELINE_RUN_ID}"
+
+joblib.dump(result_dict[model_name]["estimator"], bin_path)
+run_id = result_dict[model_name]["mlflow_run_id"]
+client.set_tag(run_id, "deployed", "true")
+client.set_tag(run_id, "version", version)
+
+
+## deploy to HF ##
+hfApi.upload_file(
+    repo_id=HF_REPO,
+    repo_type="model",
+    path_in_repo=bin_name,
+    path_or_fileobj=bin_path,
+    commit_message=f"version: {version} | mlflow_run_id: {run_id}",
+) # type: ignore
+
+# log HF pointer to mlflow artifact
+client.log_dict(run_id, {
+    "classifier": model_name,
+    "artifact": bin_name,
+    "hf_repo": HF_REPO,
+    "hf_tag": version,
+}, artifact_file="hf_model/metadata.json")
+
+# register model in mlflow registry
+model_uri = f"runs:/{run_id}/hf_model"
+try:
+    registered_model = client.create_registered_model(name=MLFLOW_EXPERIMENT_NAME)
+except mlflow.exceptions.RestException as e:
+    if "RESOURCE_ALREADY_EXISTS" in str(e):
+        print(f"Registered model '{MLFLOW_EXPERIMENT_NAME}' already exists, continuing...")
+    else:
+        raise
+model_version = client.create_model_version(
+    description=f"HF model {version}",
+    name=MLFLOW_EXPERIMENT_NAME,
+    source=model_uri,
+    run_id=run_id,
+)
+
+# attach HF meta to registered model version
+client.set_model_version_tag(
+    version=model_version.version,
+    name=MLFLOW_EXPERIMENT_NAME,
+    key="hf_repo",
+    value=HF_REPO
+)
+client.set_model_version_tag(
+    version=model_version.version,
+    name=MLFLOW_EXPERIMENT_NAME,
+    key="version",
+    value=version
+)
+client.set_model_version_tag(
+    version=model_version.version,
+    name=MLFLOW_EXPERIMENT_NAME,
+    key="mlflow_run_id",
+    value=run_id
+)
+
+print(f"Registered model (version: {model_version.version}) linked to (mlflow run: {run_id}) and (HF tag {version})")

@@ -22,8 +22,15 @@ Selection Policy:
   - top_k_features_count
   - feature_importance_coverage_pct
 
+Output Schema:
+- {
+  selected_model_name: str,
+  selected_mlflow_run_id: str,
+  justification: str
+}
+
 Rules:
-- You MUST return ONLY a JSON object that strictly conforms to the GIVEN SCHEMA.
+- You MUST return ONLY a JSON object that strictly conforms to the given Output SCHEMA.
 - Do NOT include nested objects, audit trails, or candidate lists.
 - Do NOT include explanations outside the justification field.
 - Justification must be concise (maximum length 160 characters) in text only.

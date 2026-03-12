@@ -3,7 +3,6 @@ from performance_evaluators import extract_model_structure, classify_model_compl
 from util2 import IQRCapper
 
 from sklearn.compose import make_column_transformer, make_column_selector
-#from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.inspection import permutation_importance
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -98,13 +97,6 @@ def evaluate(
 
             search.fit(X_train, y_train)
             best_model = search.best_estimator_
-
-            # calibrate
-            # best_model = CalibratedClassifierCV(
-            #     estimator=search.best_estimator_,
-            #     method="isotonic", cv=5
-            # )
-            # best_model.fit(X_train, y_train)
 
             # returns
             output[model_name] = {
