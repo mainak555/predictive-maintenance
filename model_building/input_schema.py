@@ -71,11 +71,11 @@ async def generate_schema():
     pprint(result)
 
     # upload to HF
+    result["decision_threshold"] = runs[0].data.metrics.get("decision_threshold")
     result["model_name"] = model_name
     result["model_version"] = version
     result["schema_version"] = "1.0",
 
-    result["decision_threshold"] = runs[0].metrics.get("decision_threshold"),
     with open(f"{LOCAL_ARTIFACT_DIR}/input_schema.json", "w") as f:
         json.dump(result, f, indent=2)
 
