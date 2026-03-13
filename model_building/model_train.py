@@ -3,6 +3,7 @@ from performance_evaluators import extract_model_structure, classify_model_compl
 from util2 import IQRCapper
 
 from sklearn.compose import make_column_transformer, make_column_selector
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.inspection import permutation_importance
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -31,7 +32,8 @@ def evaluate(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     X_test: pd.DataFrame,
-    y_test: pd.Series,   
+    y_test: pd.Series,
+    calibrate: bool = False,
     tags: dict = {},
 ) -> dict:
     """
@@ -97,6 +99,15 @@ def evaluate(
 
             search.fit(X_train, y_train)
             best_model = search.best_estimator_
+
+            # calibrate
+            if calibrate:
+                best_model = CalibratedClassifierCV(
+                    estimator=search.best_estimator_,
+                    method="isotonic", cv=5
+                )
+                best_model.fit(X_train, y_train)
+                mlflow.set_tag("calibrated", "yes")
 
             # returns
             output[model_name] = {
@@ -207,7 +218,7 @@ def evaluate(
             mlflow.log_metric("inference_latency_ms", inference_latency_ms)
 
             # model complexity
-            structure = extract_model_structure(best_model)
+            structure = extract_model_structure(search.best_estimator_)
             model_complexity = classify_model_complexity(structure)
             mlflow.log_param("model_complexity", model_complexity)            
         #eo: with
