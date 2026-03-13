@@ -25,6 +25,27 @@ import time
 import copy
 import os
 
+## train test split from HF ##
+def get_train_test_split():
+    from huggingface_hub import HfApi
+
+    HF_REPO = os.getenv("HF_REPO")
+    hfApi = HfApi(token=os.getenv("HF_TOKEN"))
+
+    # Checking train/test splits are present or not
+    files = ["train", "test"]
+    for f in files:
+        path = f"hf://datasets/{HF_REPO}/{f}.csv"
+        try:
+            pd.read_csv(path, nrows=1)
+        except FileNotFoundError:
+            raise RuntimeError(f"{f}.csv missing @HF Dataset")
+        except Exception as e:
+            raise RuntimeError(f"Error Checking Path: {path} | Err: {e}")
+
+    return f"https://huggingface.co/datasets/{HF_REPO}/resolve/main/train.csv", \
+        f"https://huggingface.co/datasets/{HF_REPO}/resolve/main/test.csv",
+
 def evaluate(
     PIPELINE_RUN_ID: str,
     pipeline_job: str,

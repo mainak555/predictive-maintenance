@@ -1,7 +1,6 @@
 
-from util2 import get_train_test_split
+from model_train import evaluate, get_train_test_split
 from model_config import MODEL_CONFIG
-from model_train import evaluate
 
 from mlflow.tracking import MlflowClient
 from huggingface_hub import HfApi

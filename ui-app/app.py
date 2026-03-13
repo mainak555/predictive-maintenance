@@ -76,7 +76,7 @@ if submit:
         st.error("Please fill in all the required fields")
     else:
         df = pd.DataFrame([user_input])
-        proba = model.predict_proba(df)[:, 1]        
+        proba = model.predict_proba(df)[:, 1] # class 1
         pred = (proba >= decision_threshold).astype(int)
 
         st.divider()
@@ -84,12 +84,12 @@ if submit:
         res_col1, res_col2 = st.columns([1, 2])
         with res_col1:
             if pred == 1:
-                confidence = float(proba * 100)
+                confidence = proba[0] * 100
                 st.success("### YES")                
             else:
-                confidence = float((1 - proba) * 100)
+                confidence = (1 - proba[0]) * 100
                 st.error("### NO")
         with res_col2:
             st.write(f"**Model Certainty:**")
-            st.progress(float(proba) if pred == 1 else float(1 - proba), text=f"Confidence: {round(confidence, 2)}%")
+            st.progress(proba[0] if pred == 1 else 1 - proba[0], text=f"Confidence: {round(confidence, 2)}%")
         st.balloons()
