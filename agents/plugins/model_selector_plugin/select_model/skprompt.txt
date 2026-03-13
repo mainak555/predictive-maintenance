@@ -20,7 +20,7 @@ Selection Policy:
   - model_complexity
   - inference_latency_ms
   - top_k_features_count
-  - feature_importance_coverage_pct
+  - coverage_pct
 
 Output Schema:
 - {
@@ -30,7 +30,7 @@ Output Schema:
 }
 
 Rules:
-- You MUST return ONLY a JSON object that strictly conforms to the given Output SCHEMA.
+- You MUST return ONLY a JSON object that strictly conforms to the Output SCHEMA.
 - Do NOT include nested objects, audit trails, or candidate lists.
 - Do NOT include explanations outside the justification field.
 - Justification must be concise (maximum length 160 characters) in text only.

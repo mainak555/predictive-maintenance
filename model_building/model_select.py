@@ -76,7 +76,6 @@ async def get_selection():
             },
         })
 
-    pprint(agent_payload)
     try:
         decision = await run_model_selector(agent_payload)
         pprint(decision)
