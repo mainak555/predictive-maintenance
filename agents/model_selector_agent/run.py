@@ -20,6 +20,7 @@ async def run_model_selector(payload: dict) -> dict:
 
     try:
         output = json.loads(str(result))
+        print(f"Raw Output: {result}")
     except json.JSONDecodeError:
         print(f"Raw Output: {result}")
         raise RuntimeError("Model Selector Agent returned invalid JSON")
