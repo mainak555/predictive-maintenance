@@ -14,7 +14,6 @@ RUN mkdir -p artifacts/.cache/huggingface
 
 COPY --chown=user app.py .
 COPY --chown=user util.py .
-COPY --chown=user util2.py .
 COPY --chown=user assets ./assets/
 COPY --chown=user requirements.txt .
 COPY --chown=user .streamlit .streamlit/
