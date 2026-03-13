@@ -23,19 +23,17 @@ print("\033[1mRows: {}\033[0m & \033[1mColumns: {}\033[0m".format(
             df.shape[0], df.shape[1]
     ))
 
-# removing unnecessary column(s) & train-test split
+# removing unnecessary column(s)
 df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
 
-X = df.drop(columns=[target])
-y = df[target]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=40, stratify=y
+# train-test split
+train, test = train_test_split(
+    df, test_size=0.2, random_state=40, stratify=df[target]
 )
 
 # saving train/test split locally
-pd.concat([X_train, y_train[target]], axis=1).to_csv("train.csv",index=False)
-pd.concat([X_test, y_test[target]], axis=1).to_csv("test.csv",index=False)
+train.to_csv("train.csv",index=False)
+test.to_csv("test.csv",index=False)
 
 # uploading train and test datasets back to the Hugging Face data space
 for file in ["train.csv","test.csv"]:
