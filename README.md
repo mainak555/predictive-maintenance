@@ -1,4 +1,4 @@
-# Predictive Maintenance for Engine Health Monitoring
+![Predictive Maintenance for Engine Health Monitoring](ui-app/assets/banner.png)
 
 **Business Context:**  
 Vehicle breakdowns and engine failures lead to significant financial losses for both individual owners and fleet operators. Unexpected engine failures can cause expensive repairs, operational downtime, and safety risks. Predictive maintenance in the automotive industry can help minimize these issues by leveraging sensor data to forecast potential failures before they occur. 
