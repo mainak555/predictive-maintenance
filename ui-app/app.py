@@ -16,8 +16,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.image("assets/banner.png", width='content')
-st.header("Predictive Engine Health Monitoring")
-
 def render_form(schema):
     user_inputs = {}
     with st.form("main_form"):
